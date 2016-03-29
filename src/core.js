@@ -603,14 +603,33 @@ function _buildSquel(flavour = null) {
 
 
     // Combine the current expression with the given expression using the intersection operator (AND).
-    and (expr, param) {
-      if (!expr || typeof expr !== "string") {
-        throw new Error("expr must be a string");
+    and (field, operator, param) {
+      return this._add('AND', field, operator, param);
+    }
+
+
+    // Combine the current expression with the given expression using the union operator (OR).
+    or (field, operator, param) {
+      return this._add('OR', field, operator, param);
+    }
+
+
+    _add(type, field, operator, param) {
+      if (!field || typeof field !== "string") {
+        throw new Error("field/expr must be a string");
       } else {
+        let expr;
+        if (!param) {
+          expr = field;
+          param = operator;
+        } else {
+          expr = this._buildExpression(field, operator);
+        }
+
         this._current().nodes.push({
-          type: 'AND',
+          type: type,
           expr: expr,
-          para: param,
+          para: param
         });
       }
 
@@ -618,20 +637,11 @@ function _buildSquel(flavour = null) {
     }
 
 
-
-    // Combine the current expression with the given expression using the union operator (OR).
-    or (expr, param) {
-      if (!expr || typeof expr !== "string") {
-        throw new Error("expr must be a string");
-      } else {
-        this._current().nodes.push({
-          type: 'OR',
-          expr: expr,
-          para: param,
-        });
-      }
-
-      return this;
+    _buildExpression(field, operator) {
+      let escapedKey = this._sanitizeField(field);
+      let paramChar = cls.DefaultQueryBuilderOptions.parameterCharacter;
+      let condition = `${escapedKey} ${operator} ${paramChar}`;
+      return condition;
     }
 
 
@@ -653,7 +663,6 @@ function _buildSquel(flavour = null) {
 
       return this._toString(this.tree, true);
     }
-
 
 
     // Get a string representation of the given expression tree node.
@@ -1905,11 +1914,18 @@ function _buildSquel(flavour = null) {
       super('WHERE', options);
     }
 
-    where (condition, ...values) {
-      this._condition(condition, ...values);
+    where (field, operator, ...values) {
+      let validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like'];
+      if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
+        // key - operator - value
+        let expr = new cls.Expression(this.options);
+        this._condition(expr._add('AND', field, operator, values));
+      } else {
+        // default squel-behaviour without auto-quoting
+        this._condition.apply(this, arguments);
+      }
     }
   }
-
 
   // HAVING
   cls.HavingBlock = class extends cls.AbstractConditionBlock {
@@ -1917,8 +1933,16 @@ function _buildSquel(flavour = null) {
       super('HAVING', options);
     }
 
-    having (condition, ...values) {
-      this._condition(condition, ...values);
+    having (field, operator, ...values) {
+      let validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like'];
+      if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
+        // key - operator - value
+        let expr = new cls.Expression(this.options);
+        this._condition(expr._add('AND', field, operator, values));
+      } else {
+        // default squel-behaviour without auto-quoting
+        this._condition.apply(this, arguments);
+      }
     }
   }
 

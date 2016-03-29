@@ -1,5 +1,6 @@
 /*
-Copyright (c) [Ramesh Nair](http://www.hiddentao.com/)
+Original work Copyright (c) [Ramesh Nair](http://www.hiddentao.com/)
+Modified work Copyright (c) [Nicolai Lang](http://www.nicolai-lang.de/)
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -33,10 +34,11 @@ OTHER DEALINGS IN THE SOFTWARE.
         // only CommonJS-like enviroments that support module.exports,
         // like Node.
         module.exports = factory();
+    } else if (typeof xsruntime === 'object') {
+        // SAP HANA XS Engine
+        $.squel = factory();
     } else {
         // Browser globals
         root.squel = factory();
     }
 }(this, function () {
-
-

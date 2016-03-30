@@ -615,31 +615,33 @@ function _buildSquel(flavour = null) {
 
 
     _add(type, field, operator, param) {
+
       if (!field || typeof field !== "string") {
         throw new Error("field/expr must be a string");
-      } else {
-        let expr;
-        if (!param) {
-          expr = field;
-          param = operator;
-        } else {
-          expr = this._buildExpression(field, operator);
-        }
-
-        this._current().nodes.push({
-          type: type,
-          expr: expr,
-          para: param
-        });
       }
+
+      let validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
+      let expr;
+      if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
+        expr = this._buildExpression(field, operator);
+      } else {
+        expr = field;
+        param = operator;
+      }
+
+      this._current().nodes.push({
+        type: type,
+        expr: expr,
+        para: param
+      });
 
       return this;
     }
 
-
+    
     _buildExpression(field, operator) {
       let escapedKey = this._sanitizeField(field);
-      let paramChar = cls.DefaultQueryBuilderOptions.parameterCharacter;
+      let paramChar = this.options.parameterCharacter;
       let condition = `${escapedKey} ${operator} ${paramChar}`;
       return condition;
     }
@@ -1915,7 +1917,7 @@ function _buildSquel(flavour = null) {
     }
 
     where (field, operator, ...values) {
-      let validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like'];
+      let validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
       if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
         // key - operator - value
         let expr = new cls.Expression(this.options);
@@ -1934,7 +1936,7 @@ function _buildSquel(flavour = null) {
     }
 
     having (field, operator, ...values) {
-      let validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like'];
+      let validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
       if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
         // key - operator - value
         let expr = new cls.Expression(this.options);

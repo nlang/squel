@@ -728,23 +728,25 @@ OTHER DEALINGS IN THE SOFTWARE.
       }, {
         key: '_add',
         value: function _add(type, field, operator, param) {
+
           if (!field || typeof field !== "string") {
             throw new Error("field/expr must be a string");
-          } else {
-            var expr = void 0;
-            if (!param) {
-              expr = field;
-              param = operator;
-            } else {
-              expr = this._buildExpression(field, operator);
-            }
-
-            this._current().nodes.push({
-              type: type,
-              expr: expr,
-              para: param
-            });
           }
+
+          var validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
+          var expr = void 0;
+          if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
+            expr = this._buildExpression(field, operator);
+          } else {
+            expr = field;
+            param = operator;
+          }
+
+          this._current().nodes.push({
+            type: type,
+            expr: expr,
+            para: param
+          });
 
           return this;
         }
@@ -752,7 +754,7 @@ OTHER DEALINGS IN THE SOFTWARE.
         key: '_buildExpression',
         value: function _buildExpression(field, operator) {
           var escapedKey = this._sanitizeField(field);
-          var paramChar = cls.DefaultQueryBuilderOptions.parameterCharacter;
+          var paramChar = this.options.parameterCharacter;
           var condition = escapedKey + ' ' + operator + ' ' + paramChar;
           return condition;
         }
@@ -2315,7 +2317,7 @@ OTHER DEALINGS IN THE SOFTWARE.
             values[_key7 - 2] = arguments[_key7];
           }
 
-          var validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like'];
+          var validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
           if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
             // key - operator - value
             var expr = new cls.Expression(this.options);
@@ -2347,7 +2349,7 @@ OTHER DEALINGS IN THE SOFTWARE.
             values[_key8 - 2] = arguments[_key8];
           }
 
-          var validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like'];
+          var validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
           if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
             // key - operator - value
             var expr = new cls.Expression(this.options);
@@ -3191,37 +3193,49 @@ OTHER DEALINGS IN THE SOFTWARE.
       parameterCharacter: '?'
     };
 
-    /*
-    cls.WhereBlock = class extends cls.AbstractConditionBlock {
-        constructor (options) {
-            super('WHERE', options);
-        }
-          where () {
-              let [arg1, arg2, arg3] = arguments;
-            if (typeof arg1 === 'object') {
-                // key-value-object; each key-value pair is converted into a equals-conditon (=) and
-                // logically linked to the next condition by AND or OR
-                // defaults to AND
-                let logicFn = 'and';
-                if (typeof arg2 === 'string' && 'or' == arg2.toLowerCase()) {
-                    logicFn = 'or';
-                }
-                let expr = new cls.Expression();
-                for (let key in arg1) {
-                    let value = arg1[key];
-                    expr = expr[logicFn](key, "=", value);
-                }
-                this._condition(expr);
-            } else if (typeof arg1 === 'string' && 3 == arguments.length) {
-                // key - operator - value
-                let expr = new cls.Expression();
-                this._condition(expr.and(arg1, arg2, arg3));
-            } else {
-                // default squel-behaviour without auto-quoting
-                this._condition.apply(this, arguments);
+    cls.WhereBlock = function (_cls$AbstractConditio3) {
+      _inherits(_class33, _cls$AbstractConditio3);
+
+      function _class33(options) {
+        _classCallCheck(this, _class33);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class33).call(this, 'WHERE', options));
+      }
+
+      _createClass(_class33, [{
+        key: 'where',
+        value: function where(field, operator) {
+          for (var _len11 = arguments.length, values = Array(_len11 > 2 ? _len11 - 2 : 0), _key11 = 2; _key11 < _len11; _key11++) {
+            values[_key11 - 2] = arguments[_key11];
+          }
+
+          if ((typeof field === 'undefined' ? 'undefined' : _typeof(field)) === 'object') {
+            // key-value-object; each key-value pair is converted into a equals-conditon (=) and
+            // logically linked to the next condition by AND or OR
+            // defaults to AND
+            var logicFn = 'and';
+            if (typeof arg2 === 'string' && 'or' == arg2.toLowerCase()) {
+              logicFn = 'or';
             }
+            var expr = new cls.Expression(this.options);
+            for (var key in arg1) {
+              var value = arg1[key];
+              expr = expr[logicFn](key, "=", value);
+            }
+            this._condition(expr);
+          } else if (typeof arg1 === 'string' && 3 == arguments.length) {
+            // key - operator - value
+            var _expr = new cls.Expression();
+            this._condition(_expr.and(arg1, arg2, arg3));
+          } else {
+            // default squel-behaviour without auto-quoting
+            this._condition.apply(this, arguments);
+          }
         }
-        }*/
+      }]);
+
+      return _class33;
+    }(cls.AbstractConditionBlock);
   };
 
   return squel;

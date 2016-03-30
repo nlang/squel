@@ -15,7 +15,8 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /*
-Copyright (c) [Ramesh Nair](http://www.hiddentao.com/)
+Original work Copyright (c) [Ramesh Nair](http://www.hiddentao.com/)
+Modified work Copyright (c) [Nicolai Lang](http://www.nicolai-lang.de/)
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -49,6 +50,9 @@ OTHER DEALINGS IN THE SOFTWARE.
     // only CommonJS-like enviroments that support module.exports,
     // like Node.
     module.exports = factory();
+  } else if ((typeof xsruntime === 'undefined' ? 'undefined' : _typeof(xsruntime)) === 'object') {
+    // SAP HANA XS Engine
+    $.squel = factory();
   } else {
     // Browser globals
     root.squel = factory();
@@ -710,36 +714,49 @@ OTHER DEALINGS IN THE SOFTWARE.
 
       }, {
         key: 'and',
-        value: function and(expr, param) {
-          if (!expr || typeof expr !== "string") {
-            throw new Error("expr must be a string");
-          } else {
-            this._current().nodes.push({
-              type: 'AND',
-              expr: expr,
-              para: param
-            });
-          }
-
-          return this;
+        value: function and(field, operator, param) {
+          return this._add('AND', field, operator, param);
         }
 
         // Combine the current expression with the given expression using the union operator (OR).
 
       }, {
         key: 'or',
-        value: function or(expr, param) {
-          if (!expr || typeof expr !== "string") {
-            throw new Error("expr must be a string");
-          } else {
-            this._current().nodes.push({
-              type: 'OR',
-              expr: expr,
-              para: param
-            });
+        value: function or(field, operator, param) {
+          return this._add('OR', field, operator, param);
+        }
+      }, {
+        key: '_add',
+        value: function _add(type, field, operator, param) {
+
+          if (!field || typeof field !== "string") {
+            throw new Error("field/expr must be a string");
           }
 
+          var validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
+          var expr = void 0;
+          if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
+            expr = this._buildExpression(field, operator);
+          } else {
+            expr = field;
+            param = operator;
+          }
+
+          this._current().nodes.push({
+            type: type,
+            expr: expr,
+            para: param
+          });
+
           return this;
+        }
+      }, {
+        key: '_buildExpression',
+        value: function _buildExpression(field, operator) {
+          var escapedKey = this._sanitizeField(field);
+          var paramChar = this.options.parameterCharacter;
+          var condition = escapedKey + ' ' + operator + ' ' + paramChar;
+          return condition;
         }
 
         // Get the final fully constructed expression string.
@@ -2295,12 +2312,20 @@ OTHER DEALINGS IN THE SOFTWARE.
 
       _createClass(_class22, [{
         key: 'where',
-        value: function where(condition) {
-          for (var _len7 = arguments.length, values = Array(_len7 > 1 ? _len7 - 1 : 0), _key7 = 1; _key7 < _len7; _key7++) {
-            values[_key7 - 1] = arguments[_key7];
+        value: function where(field, operator) {
+          for (var _len7 = arguments.length, values = Array(_len7 > 2 ? _len7 - 2 : 0), _key7 = 2; _key7 < _len7; _key7++) {
+            values[_key7 - 2] = arguments[_key7];
           }
 
-          this._condition.apply(this, [condition].concat(values));
+          var validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
+          if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
+            // key - operator - value
+            var expr = new cls.Expression(this.options);
+            this._condition(expr._add('AND', field, operator, values));
+          } else {
+            // default squel-behaviour without auto-quoting
+            this._condition.apply(this, arguments);
+          }
         }
       }]);
 
@@ -2319,12 +2344,20 @@ OTHER DEALINGS IN THE SOFTWARE.
 
       _createClass(_class23, [{
         key: 'having',
-        value: function having(condition) {
-          for (var _len8 = arguments.length, values = Array(_len8 > 1 ? _len8 - 1 : 0), _key8 = 1; _key8 < _len8; _key8++) {
-            values[_key8 - 1] = arguments[_key8];
+        value: function having(field, operator) {
+          for (var _len8 = arguments.length, values = Array(_len8 > 2 ? _len8 - 2 : 0), _key8 = 2; _key8 < _len8; _key8++) {
+            values[_key8 - 2] = arguments[_key8];
           }
 
-          this._condition.apply(this, [condition].concat(values));
+          var validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
+          if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
+            // key - operator - value
+            var expr = new cls.Expression(this.options);
+            this._condition(expr._add('AND', field, operator, values));
+          } else {
+            // default squel-behaviour without auto-quoting
+            this._condition.apply(this, arguments);
+          }
         }
       }]);
 

@@ -3183,59 +3183,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
     var cls = _squel.cls;
 
-    // hdb query builder options
-    cls.DefaultQueryBuilderOptions = {
-      autoQuoteTableNames: true,
-      autoQuoteFieldNames: true,
-      nameQuoteCharacter: '"',
-      tableAliasQuoteCharacter: '"',
-      fieldAliasQuoteCharacter: '"',
-      parameterCharacter: '?'
-    };
-
-    cls.WhereBlock = function (_cls$AbstractConditio3) {
-      _inherits(_class33, _cls$AbstractConditio3);
-
-      function _class33(options) {
-        _classCallCheck(this, _class33);
-
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class33).call(this, 'WHERE', options));
-      }
-
-      _createClass(_class33, [{
-        key: 'where',
-        value: function where(field, operator) {
-          for (var _len11 = arguments.length, values = Array(_len11 > 2 ? _len11 - 2 : 0), _key11 = 2; _key11 < _len11; _key11++) {
-            values[_key11 - 2] = arguments[_key11];
-          }
-
-          if ((typeof field === 'undefined' ? 'undefined' : _typeof(field)) === 'object') {
-            // key-value-object; each key-value pair is converted into a equals-conditon (=) and
-            // logically linked to the next condition by AND or OR
-            // defaults to AND
-            var logicFn = 'and';
-            if (typeof arg2 === 'string' && 'or' == arg2.toLowerCase()) {
-              logicFn = 'or';
-            }
-            var expr = new cls.Expression(this.options);
-            for (var key in arg1) {
-              var value = arg1[key];
-              expr = expr[logicFn](key, "=", value);
-            }
-            this._condition(expr);
-          } else if (typeof arg1 === 'string' && 3 == arguments.length) {
-            // key - operator - value
-            var _expr = new cls.Expression();
-            this._condition(_expr.and(arg1, arg2, arg3));
-          } else {
-            // default squel-behaviour without auto-quoting
-            this._condition.apply(this, arguments);
-          }
-        }
-      }]);
-
-      return _class33;
-    }(cls.AbstractConditionBlock);
+    cls.DefaultQueryBuilderOptions.autoQuoteTableNames = true;
+    cls.DefaultQueryBuilderOptions.autoQuoteFieldNames = true;
+    cls.DefaultQueryBuilderOptions.nameQuoteCharacter = '"';
+    cls.DefaultQueryBuilderOptions.tableAliasQuoteCharacter = '"';
+    cls.DefaultQueryBuilderOptions.fieldAliasQuoteCharacter = '"';
+    cls.DefaultQueryBuilderOptions.parameterCharacter = '?';
   };
 
   return squel;

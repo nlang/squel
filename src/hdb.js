@@ -4,16 +4,12 @@ squel.flavours['hdb'] = function(_squel) {
 
     let cls = _squel.cls;
 
-    // hdb query builder options
-    cls.DefaultQueryBuilderOptions = {
-        autoQuoteTableNames: true,
-        autoQuoteFieldNames: true,
-        nameQuoteCharacter: '"',
-        tableAliasQuoteCharacter: '"',
-        fieldAliasQuoteCharacter: '"',
-        parameterCharacter: '?'
-    };
+    cls.DefaultQueryBuilderOptions.autoQuoteTableNames = true;
+    cls.DefaultQueryBuilderOptions.autoQuoteFieldNames = true;
+    cls.DefaultQueryBuilderOptions.nameQuoteCharacter = '"';
+    cls.DefaultQueryBuilderOptions.tableAliasQuoteCharacter = '"';
+    cls.DefaultQueryBuilderOptions.fieldAliasQuoteCharacter = '"';
+    cls.DefaultQueryBuilderOptions.parameterCharacter = '?';
     
-
 };
 

@@ -3189,6 +3189,212 @@ OTHER DEALINGS IN THE SOFTWARE.
     cls.DefaultQueryBuilderOptions.tableAliasQuoteCharacter = '"';
     cls.DefaultQueryBuilderOptions.fieldAliasQuoteCharacter = '"';
     cls.DefaultQueryBuilderOptions.parameterCharacter = '?';
+
+    cls.HdbAbstractTableBlock = function (_cls$AbstractTableBlo3) {
+      _inherits(_class33, _cls$AbstractTableBlo3);
+
+      function _class33(options) {
+        _classCallCheck(this, _class33);
+
+        var _this50 = _possibleConstructorReturn(this, Object.getPrototypeOf(_class33).call(this, options));
+
+        _this50.tables = [];
+        return _this50;
+      }
+
+      _createClass(_class33, [{
+        key: '_table',
+        value: function _table(schema, table) {
+          var alias = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+          if (alias) {
+            alias = this._sanitizeTableAlias(alias);
+          }
+
+          table = this._sanitizeTable(table, false);
+          if (schema) {
+            schema = this._sanitizeTable(schema, false);
+            table = schema + '.' + table;
+          }
+
+          if (this.options.singleTable) {
+            this.tables = [];
+          }
+
+          this.tables.push({
+            table: table,
+            alias: alias
+          });
+        }
+      }]);
+
+      return _class33;
+    }(cls.AbstractTableBlock);
+
+    // Update Table
+    cls.HdbUpdateTableBlock = function (_cls$HdbAbstractTable) {
+      _inherits(_class34, _cls$HdbAbstractTable);
+
+      function _class34() {
+        _classCallCheck(this, _class34);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class34).apply(this, arguments));
+      }
+
+      _createClass(_class34, [{
+        key: 'from',
+        value: function from(schema, table) {
+          var alias = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+          this._table(schema, table, alias);
+        }
+      }]);
+
+      return _class34;
+    }(cls.HdbAbstractTableBlock);
+
+    // FROM table
+    cls.HdbFromTableBlock = function (_cls$HdbAbstractTable2) {
+      _inherits(_class35, _cls$HdbAbstractTable2);
+
+      function _class35() {
+        _classCallCheck(this, _class35);
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class35).apply(this, arguments));
+      }
+
+      _createClass(_class35, [{
+        key: 'from',
+        value: function from(schema, table) {
+          var alias = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+          this._table(schema, table, alias);
+        }
+      }, {
+        key: 'buildStr',
+        value: function buildStr(queryBuilder) {
+          var tables = _get(Object.getPrototypeOf(_class35.prototype), 'buildStr', this).call(this, queryBuilder);
+          return tables.length ? 'FROM ' + tables : "";
+        }
+      }, {
+        key: 'buildParam',
+        value: function buildParam(queryBuilder) {
+          return this._buildParam(queryBuilder, "FROM");
+        }
+      }]);
+
+      return _class35;
+    }(cls.HdbAbstractTableBlock);
+
+    // INTO table
+    cls.HdbIntoTableBlock = function (_cls$Block16) {
+      _inherits(_class36, _cls$Block16);
+
+      function _class36(options) {
+        _classCallCheck(this, _class36);
+
+        var _this53 = _possibleConstructorReturn(this, Object.getPrototypeOf(_class36).call(this, options));
+
+        _this53.table = null;
+        return _this53;
+      }
+
+      _createClass(_class36, [{
+        key: 'into',
+        value: function into(schema, table) {
+          this.table = this._sanitizeTable(table, false);
+          if (schema) {
+            schema = this._sanitizeTable(schema, false);
+            this.table = schema + '.' + this.table;
+          }
+        }
+      }, {
+        key: 'buildStr',
+        value: function buildStr(queryBuilder) {
+          if (!this.table) {
+            throw new Error("into() needs to be called");
+          }
+          return 'INTO ' + this.table;
+        }
+      }]);
+
+      return _class36;
+    }(cls.Block);
+
+    // SELECT query builder.
+    cls.Select = function (_cls$QueryBuilder5) {
+      _inherits(_class37, _cls$QueryBuilder5);
+
+      function _class37(options) {
+        var blocks = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+
+        _classCallCheck(this, _class37);
+
+        blocks = blocks || [new cls.StringBlock(options, 'SELECT'), new cls.FunctionBlock(options), new cls.DistinctBlock(options), new cls.GetFieldBlock(options), new cls.HdbFromTableBlock(_extend({}, options, { allowNested: true })), new cls.JoinBlock(_extend({}, options, { allowNested: true })), new cls.WhereBlock(options), new cls.GroupByBlock(options), new cls.HavingBlock(options), new cls.OrderByBlock(options), new cls.LimitBlock(options), new cls.OffsetBlock(options), new cls.UnionBlock(_extend({}, options, { allowNested: true }))];
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class37).call(this, options, blocks));
+      }
+
+      _createClass(_class37, [{
+        key: 'isNestable',
+        value: function isNestable() {
+          return true;
+        }
+      }]);
+
+      return _class37;
+    }(cls.QueryBuilder);
+
+    // UPDATE query builder.
+    cls.Update = function (_cls$QueryBuilder6) {
+      _inherits(_class38, _cls$QueryBuilder6);
+
+      function _class38(options) {
+        var blocks = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+
+        _classCallCheck(this, _class38);
+
+        blocks = blocks || [new cls.StringBlock(options, 'UPDATE'), new cls.HdbUpdateTableBlock(options), new cls.SetFieldBlock(options), new cls.WhereBlock(options), new cls.OrderByBlock(options), new cls.LimitBlock(options)];
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class38).call(this, options, blocks));
+      }
+
+      return _class38;
+    }(cls.QueryBuilder);
+
+    // DELETE query builder.
+    cls.Delete = function (_cls$QueryBuilder7) {
+      _inherits(_class39, _cls$QueryBuilder7);
+
+      function _class39(options) {
+        var blocks = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+
+        _classCallCheck(this, _class39);
+
+        blocks = blocks || [new cls.StringBlock(options, 'DELETE'), new cls.HdbFromTableBlock(_extend({}, options, { singleTable: true })), new cls.JoinBlock(options), new cls.WhereBlock(options), new cls.OrderByBlock(options), new cls.LimitBlock(options)];
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class39).call(this, options, blocks));
+      }
+
+      return _class39;
+    }(cls.QueryBuilder);
+
+    // An INSERT query builder.
+    cls.Insert = function (_cls$QueryBuilder8) {
+      _inherits(_class40, _cls$QueryBuilder8);
+
+      function _class40(options) {
+        var blocks = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+
+        _classCallCheck(this, _class40);
+
+        blocks = blocks || [new cls.StringBlock(options, 'INSERT'), new cls.HdbIntoTableBlock(options), new cls.InsertFieldValueBlock(options), new cls.InsertFieldsFromQueryBlock(options)];
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class40).call(this, options, blocks));
+      }
+
+      return _class40;
+    }(cls.QueryBuilder);
   };
 
   return squel;

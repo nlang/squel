@@ -41,13 +41,13 @@ squel.flavours['hdb'] = function(_squel) {
 
     // Update Table
     cls.HdbUpdateTableBlock = class extends cls.HdbAbstractTableBlock {
-        from (schema, table, alias = null) {
+        table (schema, table, alias = null) {
             this._table(schema, table, alias);
         }
     }
 
     // FROM table
-    cls.HdbFromTableBlock = class extends cls.HdbAbstractTableBlock {
+    cls.FromTableBlock = class extends cls.HdbAbstractTableBlock {
         from (schema, table, alias = null) {
             this._table(schema, table, alias);
         }
@@ -86,33 +86,6 @@ squel.flavours['hdb'] = function(_squel) {
         }
     }
 
-    // SELECT query builder.
-    cls.Select = class extends cls.QueryBuilder {
-        constructor (options, blocks = null) {
-            blocks = blocks || [
-                    new cls.StringBlock(options, 'SELECT'),
-                    new cls.FunctionBlock(options),
-                    new cls.DistinctBlock(options),
-                    new cls.GetFieldBlock(options),
-                    new cls.HdbFromTableBlock(_extend({}, options, { allowNested: true })),
-                    new cls.JoinBlock(_extend({}, options, { allowNested: true })),
-                    new cls.WhereBlock(options),
-                    new cls.GroupByBlock(options),
-                    new cls.HavingBlock(options),
-                    new cls.OrderByBlock(options),
-                    new cls.LimitBlock(options),
-                    new cls.OffsetBlock(options),
-                    new cls.UnionBlock(_extend({}, options, { allowNested: true })),
-                ];
-
-            super(options, blocks);
-        }
-
-        isNestable () {
-            return true
-        }
-    }
-
     // UPDATE query builder.
     cls.Update = class extends cls.QueryBuilder {
         constructor (options, blocks = null) {
@@ -120,22 +93,6 @@ squel.flavours['hdb'] = function(_squel) {
                     new cls.StringBlock(options, 'UPDATE'),
                     new cls.HdbUpdateTableBlock(options),
                     new cls.SetFieldBlock(options),
-                    new cls.WhereBlock(options),
-                    new cls.OrderByBlock(options),
-                    new cls.LimitBlock(options),
-                ];
-
-            super(options, blocks);
-        }
-    }
-
-    // DELETE query builder.
-    cls.Delete = class extends cls.QueryBuilder {
-        constructor (options, blocks = null) {
-            blocks = blocks || [
-                    new cls.StringBlock(options, 'DELETE'),
-                    new cls.HdbFromTableBlock( _extend({}, options, { singleTable: true }) ),
-                    new cls.JoinBlock(options),
                     new cls.WhereBlock(options),
                     new cls.OrderByBlock(options),
                     new cls.LimitBlock(options),

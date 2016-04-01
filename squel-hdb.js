@@ -3242,11 +3242,11 @@ OTHER DEALINGS IN THE SOFTWARE.
       }
 
       _createClass(_class34, [{
-        key: 'from',
-        value: function from(schema, table) {
+        key: 'table',
+        value: function table(schema, _table3) {
           var alias = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
 
-          this._table(schema, table, alias);
+          this._table(schema, _table3, alias);
         }
       }]);
 
@@ -3254,7 +3254,7 @@ OTHER DEALINGS IN THE SOFTWARE.
     }(cls.HdbAbstractTableBlock);
 
     // FROM table
-    cls.HdbFromTableBlock = function (_cls$HdbAbstractTable2) {
+    cls.FromTableBlock = function (_cls$HdbAbstractTable2) {
       _inherits(_class35, _cls$HdbAbstractTable2);
 
       function _class35() {
@@ -3321,8 +3321,8 @@ OTHER DEALINGS IN THE SOFTWARE.
       return _class36;
     }(cls.Block);
 
-    // SELECT query builder.
-    cls.Select = function (_cls$QueryBuilder5) {
+    // UPDATE query builder.
+    cls.Update = function (_cls$QueryBuilder5) {
       _inherits(_class37, _cls$QueryBuilder5);
 
       function _class37(options) {
@@ -3330,23 +3330,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 
         _classCallCheck(this, _class37);
 
-        blocks = blocks || [new cls.StringBlock(options, 'SELECT'), new cls.FunctionBlock(options), new cls.DistinctBlock(options), new cls.GetFieldBlock(options), new cls.HdbFromTableBlock(_extend({}, options, { allowNested: true })), new cls.JoinBlock(_extend({}, options, { allowNested: true })), new cls.WhereBlock(options), new cls.GroupByBlock(options), new cls.HavingBlock(options), new cls.OrderByBlock(options), new cls.LimitBlock(options), new cls.OffsetBlock(options), new cls.UnionBlock(_extend({}, options, { allowNested: true }))];
+        blocks = blocks || [new cls.StringBlock(options, 'UPDATE'), new cls.HdbUpdateTableBlock(options), new cls.SetFieldBlock(options), new cls.WhereBlock(options), new cls.OrderByBlock(options), new cls.LimitBlock(options)];
 
         return _possibleConstructorReturn(this, Object.getPrototypeOf(_class37).call(this, options, blocks));
       }
 
-      _createClass(_class37, [{
-        key: 'isNestable',
-        value: function isNestable() {
-          return true;
-        }
-      }]);
-
       return _class37;
     }(cls.QueryBuilder);
 
-    // UPDATE query builder.
-    cls.Update = function (_cls$QueryBuilder6) {
+    // An INSERT query builder.
+    cls.Insert = function (_cls$QueryBuilder6) {
       _inherits(_class38, _cls$QueryBuilder6);
 
       function _class38(options) {
@@ -3354,46 +3347,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
         _classCallCheck(this, _class38);
 
-        blocks = blocks || [new cls.StringBlock(options, 'UPDATE'), new cls.HdbUpdateTableBlock(options), new cls.SetFieldBlock(options), new cls.WhereBlock(options), new cls.OrderByBlock(options), new cls.LimitBlock(options)];
+        blocks = blocks || [new cls.StringBlock(options, 'INSERT'), new cls.HdbIntoTableBlock(options), new cls.InsertFieldValueBlock(options), new cls.InsertFieldsFromQueryBlock(options)];
 
         return _possibleConstructorReturn(this, Object.getPrototypeOf(_class38).call(this, options, blocks));
       }
 
       return _class38;
-    }(cls.QueryBuilder);
-
-    // DELETE query builder.
-    cls.Delete = function (_cls$QueryBuilder7) {
-      _inherits(_class39, _cls$QueryBuilder7);
-
-      function _class39(options) {
-        var blocks = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
-
-        _classCallCheck(this, _class39);
-
-        blocks = blocks || [new cls.StringBlock(options, 'DELETE'), new cls.HdbFromTableBlock(_extend({}, options, { singleTable: true })), new cls.JoinBlock(options), new cls.WhereBlock(options), new cls.OrderByBlock(options), new cls.LimitBlock(options)];
-
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class39).call(this, options, blocks));
-      }
-
-      return _class39;
-    }(cls.QueryBuilder);
-
-    // An INSERT query builder.
-    cls.Insert = function (_cls$QueryBuilder8) {
-      _inherits(_class40, _cls$QueryBuilder8);
-
-      function _class40(options) {
-        var blocks = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
-
-        _classCallCheck(this, _class40);
-
-        blocks = blocks || [new cls.StringBlock(options, 'INSERT'), new cls.HdbIntoTableBlock(options), new cls.InsertFieldValueBlock(options), new cls.InsertFieldsFromQueryBlock(options)];
-
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class40).call(this, options, blocks));
-      }
-
-      return _class40;
     }(cls.QueryBuilder);
   };
 

@@ -368,6 +368,15 @@ OTHER DEALINGS IN THE SOFTWARE.
           if (item instanceof cls.QueryBuilder) {
             item = '(' + item + ')';
           } else {
+
+            if (_isArray(item)) {
+              var quotedItems = [];
+              for (var i = 0, l = item.length; i < l; i++) {
+                quotedItems.push(this._sanitizeField(item[i], { ignorePeriodsForFieldNameQuotes: true }));
+              }
+              return quotedItems.join(".");
+            }
+
             item = this._sanitizeName(item, "field name");
 
             if (this.options.autoQuoteFieldNames) {
@@ -376,7 +385,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
                 if (formattingOptions.ignorePeriodsForFieldNameQuotes) {
                   // a.b.c -> `a.b.c`
-                  item = '' + quoteChar + item + quoteChar;
+                  item = '*' === item ? item : '' + quoteChar + item + quoteChar;
                 } else {
                   // a.b.c -> `a`.`b`.`c`
                   item = item.split('.').map(function (v) {
@@ -729,13 +738,13 @@ OTHER DEALINGS IN THE SOFTWARE.
         key: '_add',
         value: function _add(type, field, operator, param) {
 
-          if (!field || typeof field !== "string") {
-            throw new Error("field/expr must be a string");
+          if (!field || typeof field !== "string" && !_isArray(field)) {
+            throw new Error("field/expr must be a string or array");
           }
 
           var validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
           var expr = void 0;
-          if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
+          if ((typeof field === 'string' || _isArray(field)) && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
             expr = this._buildExpression(field, operator);
           } else {
             expr = field;
@@ -3190,6 +3199,15 @@ OTHER DEALINGS IN THE SOFTWARE.
     cls.DefaultQueryBuilderOptions.fieldAliasQuoteCharacter = '"';
     cls.DefaultQueryBuilderOptions.parameterCharacter = '?';
 
+    _squel.registerValueHandler(Date, function (value, asParam) {
+      if (asParam) {
+        return value;
+      } else {
+        var formatedDate = value.toLocaleFormat("%Y-%m-%dT%H:%M:%S");
+        return '\'' + formatedDate + '\'';
+      }
+    });
+
     cls.HdbAbstractTableBlock = function (_cls$AbstractTableBlo3) {
       _inherits(_class33, _cls$AbstractTableBlo3);
 
@@ -3204,11 +3222,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
       _createClass(_class33, [{
         key: '_table',
-        value: function _table(schema, table) {
-          var alias = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+        value: function _table(table) {
+          var alias = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
           if (alias) {
             alias = this._sanitizeTableAlias(alias);
+          }
+
+          var schema = void 0;
+          if (_isArray(table) && table.length == 2) {
+            schema = table[0];
+            table = table[1];
           }
 
           table = this._sanitizeTable(table, false);
@@ -3243,10 +3267,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
       _createClass(_class34, [{
         key: 'table',
-        value: function table(schema, _table3) {
-          var alias = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+        value: function table(_table3) {
+          var alias = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
-          this._table(schema, _table3, alias);
+          this._table(_table3, alias);
         }
       }]);
 
@@ -3265,10 +3289,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
       _createClass(_class35, [{
         key: 'from',
-        value: function from(schema, table) {
-          var alias = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+        value: function from(table) {
+          var alias = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
-          this._table(schema, table, alias);
+          this._table(table, alias);
         }
       }, {
         key: 'buildStr',
@@ -3301,7 +3325,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 
       _createClass(_class36, [{
         key: 'into',
-        value: function into(schema, table) {
+        value: function into(table) {
+
+          var schema = void 0;
+          if (_isArray(table) && table.length == 2) {
+            schema = table[0];
+            table = table[1];
+          }
+
           this.table = this._sanitizeTable(table, false);
           if (schema) {
             schema = this._sanitizeTable(schema, false);
@@ -3321,38 +3352,255 @@ OTHER DEALINGS IN THE SOFTWARE.
       return _class36;
     }(cls.Block);
 
-    // UPDATE query builder.
-    cls.Update = function (_cls$QueryBuilder5) {
-      _inherits(_class37, _cls$QueryBuilder5);
+    cls.HdbJoinBlock = function (_cls$Block17) {
+      _inherits(_class37, _cls$Block17);
 
       function _class37(options) {
-        var blocks = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
-
         _classCallCheck(this, _class37);
 
-        blocks = blocks || [new cls.StringBlock(options, 'UPDATE'), new cls.HdbUpdateTableBlock(options), new cls.SetFieldBlock(options), new cls.WhereBlock(options), new cls.OrderByBlock(options), new cls.LimitBlock(options)];
+        var _this54 = _possibleConstructorReturn(this, Object.getPrototypeOf(_class37).call(this, options));
 
-        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class37).call(this, options, blocks));
+        _this54.joins = [];
+        return _this54;
       }
 
-      return _class37;
-    }(cls.QueryBuilder);
+      _createClass(_class37, [{
+        key: 'join',
+        value: function join(table) {
+          var alias = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+          var condition = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+          var type = arguments.length <= 3 || arguments[3] === undefined ? 'INNER' : arguments[3];
 
-    // An INSERT query builder.
-    cls.Insert = function (_cls$QueryBuilder6) {
-      _inherits(_class38, _cls$QueryBuilder6);
+          var schema = void 0;
+          if (_isArray(table) && table.length == 2) {
+            schema = table[0];
+            table = table[1];
+          }
+
+          table = this._sanitizeTable(table, true);
+          if (schema) {
+            schema = this._sanitizeTable(schema, false);
+            table = schema + '.' + table;
+          }
+          alias = alias ? this._sanitizeTableAlias(alias) : alias;
+          condition = condition ? this._sanitizeCondition(condition) : condition;
+
+          this.joins.push({
+            type: type,
+            table: table,
+            alias: alias,
+            condition: condition
+          });
+        }
+      }, {
+        key: 'left_join',
+        value: function left_join(table) {
+          var alias = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+          var condition = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+          this.join(table, alias, condition, 'LEFT');
+        }
+      }, {
+        key: 'right_join',
+        value: function right_join(table) {
+          var alias = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+          var condition = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+          this.join(table, alias, condition, 'RIGHT');
+        }
+      }, {
+        key: 'outer_join',
+        value: function outer_join(table) {
+          var alias = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+          var condition = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+          this.join(table, alias, condition, 'OUTER');
+        }
+      }, {
+        key: 'left_outer_join',
+        value: function left_outer_join(table) {
+          var alias = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+          var condition = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+          this.join(table, alias, condition, 'LEFT OUTER');
+        }
+      }, {
+        key: 'full_join',
+        value: function full_join(table) {
+          var alias = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+          var condition = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+          this.join(table, alias, condition, 'FULL');
+        }
+      }, {
+        key: 'cross_join',
+        value: function cross_join(table) {
+          var alias = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+          var condition = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
+          this.join(table, alias, condition, 'CROSS');
+        }
+      }, {
+        key: 'buildStr',
+        value: function buildStr(queryBuilder) {
+          var joins = "";
+
+          _forOf(this.joins || [], function (j) {
+            if (joins.length) {
+              joins += " ";
+            }
+
+            joins += j.type + ' JOIN ';
+            if ("string" === typeof j.table) {
+              joins += j.table;
+            } else {
+              joins += '(' + j.table + ')';
+            }
+            if (j.alias) {
+              joins += ' ' + j.alias;
+            }
+            if (j.condition) {
+              joins += ' ON (' + j.condition + ')';
+            }
+          });
+
+          return joins;
+        }
+      }, {
+        key: 'buildParam',
+        value: function buildParam(queryBuilder) {
+          var _this55 = this;
+
+          var ret = {
+            text: "",
+            values: []
+          };
+
+          var params = [];
+          var joinStr = "";
+
+          if (0 >= this.joins.length) {
+            return ret;
+          }
+
+          // retrieve the parameterised queries
+          _forOf(this.joins, function (blk) {
+            var p = void 0;
+            if ("string" === typeof blk.table) {
+              p = { "text": '' + blk.table, "values": [] };
+            } else if (blk.table instanceof cls.QueryBuilder) {
+              // building a nested query
+              blk.table.updateOptions({ "nestedBuilder": true });
+              p = blk.table.toParam();
+            } else {
+              // building a nested query
+              blk.updateOptions({ "nestedBuilder": true });
+              p = blk.buildParam(queryBuilder);
+            }
+
+            if (blk.condition instanceof cls.Expression) {
+              var cp = blk.condition.toParam();
+              p.condition = cp.text;
+              p.values = p.values.concat(cp.values);
+            } else {
+              p.condition = blk.condition;
+            }
+
+            p.join = blk;
+            params.push(p);
+          });
+
+          // join the queries and their parameters
+          // this is the last building block processed so always add UNION if there are any UNION blocks
+          _forOf(params, function (p) {
+            if (joinStr.length) {
+              joinStr += " ";
+            }
+
+            joinStr += p.join.type + ' JOIN ';
+
+            if ("string" === typeof p.join.table) {
+              joinStr += p.text;
+            } else {
+              joinStr += '(' + p.text + ')';
+            }
+            if (p.join.alias) {
+              joinStr += ' ' + p.join.alias;
+            }
+            if (p.condition) {
+              joinStr += ' ON (' + p.condition + ')';
+            }
+
+            _forOf(p.values, function (v) {
+              ret.values.push(_this55._formatCustomValue(v));
+            });
+          });
+
+          ret.text += joinStr;
+
+          return ret;
+        }
+      }]);
+
+      return _class37;
+    }(cls.Block);
+
+    // UPDATE query builder.
+    cls.Update = function (_cls$QueryBuilder5) {
+      _inherits(_class38, _cls$QueryBuilder5);
 
       function _class38(options) {
         var blocks = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
 
         _classCallCheck(this, _class38);
 
-        blocks = blocks || [new cls.StringBlock(options, 'INSERT'), new cls.HdbIntoTableBlock(options), new cls.InsertFieldValueBlock(options), new cls.InsertFieldsFromQueryBlock(options)];
+        blocks = blocks || [new cls.StringBlock(options, 'UPDATE'), new cls.HdbUpdateTableBlock(options), new cls.SetFieldBlock(options), new cls.WhereBlock(options), new cls.OrderByBlock(options), new cls.LimitBlock(options)];
 
         return _possibleConstructorReturn(this, Object.getPrototypeOf(_class38).call(this, options, blocks));
       }
 
       return _class38;
+    }(cls.QueryBuilder);
+
+    // An INSERT query builder.
+    cls.Insert = function (_cls$QueryBuilder6) {
+      _inherits(_class39, _cls$QueryBuilder6);
+
+      function _class39(options) {
+        var blocks = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+
+        _classCallCheck(this, _class39);
+
+        blocks = blocks || [new cls.StringBlock(options, 'INSERT'), new cls.HdbIntoTableBlock(options), new cls.InsertFieldValueBlock(options), new cls.InsertFieldsFromQueryBlock(options)];
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class39).call(this, options, blocks));
+      }
+
+      return _class39;
+    }(cls.QueryBuilder);
+
+    // SELECT query builder.
+    cls.Select = function (_cls$QueryBuilder7) {
+      _inherits(_class40, _cls$QueryBuilder7);
+
+      function _class40(options) {
+        var blocks = arguments.length <= 1 || arguments[1] === undefined ? null : arguments[1];
+
+        _classCallCheck(this, _class40);
+
+        blocks = blocks || [new cls.StringBlock(options, 'SELECT'), new cls.FunctionBlock(options), new cls.DistinctBlock(options), new cls.GetFieldBlock(options), new cls.FromTableBlock(_extend({}, options, { allowNested: true })), new cls.HdbJoinBlock(_extend({}, options, { allowNested: false })), new cls.WhereBlock(options), new cls.GroupByBlock(options), new cls.HavingBlock(options), new cls.OrderByBlock(options), new cls.LimitBlock(options), new cls.OffsetBlock(options), new cls.UnionBlock(_extend({}, options, { allowNested: true }))];
+
+        return _possibleConstructorReturn(this, Object.getPrototypeOf(_class40).call(this, options, blocks));
+      }
+
+      _createClass(_class40, [{
+        key: 'isNestable',
+        value: function isNestable() {
+          return true;
+        }
+      }]);
+
+      return _class40;
     }(cls.QueryBuilder);
   };
 

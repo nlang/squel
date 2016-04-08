@@ -368,6 +368,15 @@ OTHER DEALINGS IN THE SOFTWARE.
           if (item instanceof cls.QueryBuilder) {
             item = '(' + item + ')';
           } else {
+
+            if (_isArray(item)) {
+              var quotedItems = [];
+              for (var i = 0, l = item.length; i < l; i++) {
+                quotedItems.push(this._sanitizeField(item[i], { ignorePeriodsForFieldNameQuotes: true }));
+              }
+              return quotedItems.join(".");
+            }
+
             item = this._sanitizeName(item, "field name");
 
             if (this.options.autoQuoteFieldNames) {
@@ -376,7 +385,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
                 if (formattingOptions.ignorePeriodsForFieldNameQuotes) {
                   // a.b.c -> `a.b.c`
-                  item = '' + quoteChar + item + quoteChar;
+                  item = '*' === item ? item : '' + quoteChar + item + quoteChar;
                 } else {
                   // a.b.c -> `a`.`b`.`c`
                   item = item.split('.').map(function (v) {
@@ -729,13 +738,13 @@ OTHER DEALINGS IN THE SOFTWARE.
         key: '_add',
         value: function _add(type, field, operator, param) {
 
-          if (!field || typeof field !== "string") {
-            throw new Error("field/expr must be a string");
+          if (!field || typeof field !== "string" && !_isArray(field)) {
+            throw new Error("field/expr must be a string or array");
           }
 
           var validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
           var expr = void 0;
-          if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
+          if ((typeof field === 'string' || _isArray(field)) && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
             expr = this._buildExpression(field, operator);
           } else {
             expr = field;

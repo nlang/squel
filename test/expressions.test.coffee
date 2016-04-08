@@ -120,8 +120,6 @@ test['Expression builder base class'] =
   'and()':
     'without an argument throws an error': ->
       assert.throws (=> @inst.and()), 'expr must be a string'
-    'with an array throws an error': ->
-      assert.throws (=> @inst.and([1])), 'expr must be a string'
     'with an object throws an error': ->
       assert.throws (=> @inst.and(new Object)), 'expr must be a string'
     'with a function throws an error': ->
@@ -133,8 +131,6 @@ test['Expression builder base class'] =
   'or()':
     'without an argument throws an error': ->
       assert.throws (=> @inst.or()), 'expr must be a string'
-    'with an array throws an error': ->
-      assert.throws (=> @inst.or([1])), 'expr must be a string'
     'with an object throws an error': ->
       assert.throws (=> @inst.or(new Object)), 'expr must be a string'
     'with a function throws an error': ->

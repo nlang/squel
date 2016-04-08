@@ -280,6 +280,15 @@ function _buildSquel(flavour = null) {
       if (item instanceof cls.QueryBuilder) {
         item = `(${item})`;
       } else {
+
+        if (_isArray(item)) {
+          let quotedItems = [];
+          for (let i = 0, l = item.length; i < l; i++) {
+            quotedItems.push(this._sanitizeField(item[i], { ignorePeriodsForFieldNameQuotes: true }));
+          }
+          return quotedItems.join(".");
+        }
+
         item = this._sanitizeName(item, "field name");
 
         if (this.options.autoQuoteFieldNames) {
@@ -287,16 +296,16 @@ function _buildSquel(flavour = null) {
 
           if (formattingOptions.ignorePeriodsForFieldNameQuotes) {
             // a.b.c -> `a.b.c`
-            item = `${quoteChar}${item}${quoteChar}`;
+            item = ('*' === item ? item : `${quoteChar}${item}${quoteChar}`);
           } else {
             // a.b.c -> `a`.`b`.`c`
             item = item
-              .split('.')
-              .map(function(v) {
-                // treat '*' as special case (#79)
-                return ('*' === v ? v : `${quoteChar}${v}${quoteChar}`);
-              })
-              .join('.')
+                .split('.')
+                .map(function(v) {
+                  // treat '*' as special case (#79)
+                  return ('*' === v ? v : `${quoteChar}${v}${quoteChar}`);
+                })
+                .join('.')
           }
         }
       }
@@ -616,13 +625,13 @@ function _buildSquel(flavour = null) {
 
     _add(type, field, operator, param) {
 
-      if (!field || typeof field !== "string") {
-        throw new Error("field/expr must be a string");
+      if (!field || (typeof field !== "string" && !_isArray(field))) {
+        throw new Error("field/expr must be a string or array");
       }
 
       let validOperators = ['=', '<', '>', '<=', '>=', '<>', '!=', 'in', 'not in', 'like', 'not like', 'is', 'is not'];
       let expr;
-      if (typeof field === 'string' && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
+      if ((typeof field === 'string' || _isArray(field)) && typeof operator === 'string' && -1 != validOperators.indexOf(operator.toLowerCase())) {
         expr = this._buildExpression(field, operator);
       } else {
         expr = field;
